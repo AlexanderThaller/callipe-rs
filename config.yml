@@ -1,0 +1,4 @@
+inputs:
+  - Cpu:
+      per_cpu: true
+      total_cpu: true
