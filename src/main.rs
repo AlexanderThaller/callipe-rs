@@ -1,29 +1,77 @@
-use std::net::SocketAddr;
+#![warn(clippy::pedantic)]
+//#![warn(clippy::unwrap_used)]
+#![warn(rust_2018_idioms, unused_lifetimes, missing_debug_implementations)]
+#![forbid(unsafe_code)]
+
+use std::{
+    net::{
+        Ipv4Addr,
+        Ipv6Addr,
+        SocketAddr,
+    },
+    pin::Pin,
+    task::{
+        Context,
+        Poll,
+    },
+};
 
 use axum::{
     routing::get,
     Router,
 };
+use hyper::server::{
+    accept::Accept,
+    conn::AddrIncoming,
+};
+
+struct CombinedIncoming {
+    a: AddrIncoming,
+    b: AddrIncoming,
+}
+
+impl Accept for CombinedIncoming {
+    type Conn = <AddrIncoming as Accept>::Conn;
+    type Error = <AddrIncoming as Accept>::Error;
+
+    fn poll_accept(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
+        if let Poll::Ready(Some(value)) = Pin::new(&mut self.a).poll_accept(cx) {
+            return Poll::Ready(Some(value));
+        }
+
+        if let Poll::Ready(Some(value)) = Pin::new(&mut self.b).poll_accept(cx) {
+            return Poll::Ready(Some(value));
+        }
+
+        Poll::Pending
+    }
+}
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-        .route("/", get(handler::root))
-        .route("/probe/ping", get(probe::ping::handler));
+    let app = Router::new().route("/probe/ping", get(probe::ping::handler));
 
-    let binding = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 8080);
+    let incoming_v4 = AddrIncoming::bind(&localhost_v4).unwrap();
 
-    axum::Server::bind(&binding)
+    let localhost_v6 = SocketAddr::new(Ipv6Addr::LOCALHOST.into(), 8080);
+    let incoming_v6 = AddrIncoming::bind(&localhost_v6).unwrap();
+
+    let combined = CombinedIncoming {
+        a: incoming_v4,
+        b: incoming_v6,
+    };
+
+    axum::Server::builder(combined)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
-mod handler {
-    pub(crate) async fn root() -> &'static str {
-        "Hello, World!"
-    }
-}
+mod handler {}
 
 mod probe {
     pub(crate) mod ping {
@@ -162,19 +210,19 @@ mod probe {
                 time.set(ping.time.into());
 
                 if let Some(m) = ping.min {
-                    min.set(m)
+                    min.set(m);
                 }
 
                 if let Some(a) = ping.avg {
-                    avg.set(a)
+                    avg.set(a);
                 }
 
                 if let Some(m) = ping.max {
-                    max.set(m)
+                    max.set(m);
                 }
 
                 if let Some(m) = ping.mdev {
-                    mdev.set(m)
+                    mdev.set(m);
                 }
 
                 Ok(registry)
@@ -205,10 +253,10 @@ mod probe {
                         ["rtt", "min/avg/max/mdev", "=", data, "ms"] => {
                             let mut split = data.split('/');
 
-                            out.min = split.next().map(|s| s.parse()).transpose().unwrap();
-                            out.avg = split.next().map(|s| s.parse()).transpose().unwrap();
-                            out.max = split.next().map(|s| s.parse()).transpose().unwrap();
-                            out.mdev = split.next().map(|s| s.parse()).transpose().unwrap();
+                            out.min = split.next().map(str::parse).transpose().unwrap();
+                            out.avg = split.next().map(str::parse).transpose().unwrap();
+                            out.max = split.next().map(str::parse).transpose().unwrap();
+                            out.mdev = split.next().map(str::parse).transpose().unwrap();
                         }
 
                         other => todo!("{other:?}"),
