@@ -261,7 +261,8 @@ mod probe {
                         }
 
                         ["rtt", "min/avg/max/mdev", "=", data, "ms"]
-                        | ["round-trip", "min/avg/max/stddev", "=", data, "ms"] => {
+                        | ["round-trip", "min/avg/max/stddev", "=", data, "ms"]
+                        | ["round-trip", "min/avg/max/std-dev", "=", data, "ms"] => {
                             let mut split = data.split('/');
 
                             out.min = split.next().map(str::parse).transpose().unwrap();
