@@ -58,6 +58,8 @@ async fn main() {
         .route("/probe/ping", get(probe::ping::handler))
         .route("/probe/system", get(probe::system::handler))
         .route("/probe/system/cpu", get(probe::system::cpu::handler))
+        .route("/probe/system/memory", get(probe::system::memory::handler))
+        .route("/probe/system/swap", get(probe::system::swap::handler))
         .route("/probe/system/load", get(probe::system::load::handler));
 
     let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 6122);

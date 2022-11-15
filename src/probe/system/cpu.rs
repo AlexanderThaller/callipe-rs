@@ -43,8 +43,6 @@ impl Cpu {
         sleep(Duration::from_secs(1)).await;
         let cpu = cpu.done()?;
 
-        dbg!(&cpu);
-
         register_gauge_with_registry!("system_cpu_user", "system cpu user usage", registry)?
             .set(cpu.user.into());
 
@@ -65,15 +63,11 @@ impl Cpu {
             .set(cpu.idle.into());
 
         #[cfg(target_os = "linux")]
-        register_gauge_with_registry!(
-            "iowait_cpu_interrupt",
-            "iowait cpu interrupt usage",
-            registry
-        )?
-        .set(cpu.platform.iowait.into());
+        register_gauge_with_registry!("system_cpu_iowait", "system cpu iowait usage", registry)?
+            .set(cpu.platform.iowait.into());
 
         register_int_gauge_with_registry!(
-            "iowait_cpu_core_count",
+            "system_cpu_core_count",
             "how many cpus are available",
             registry
         )?
