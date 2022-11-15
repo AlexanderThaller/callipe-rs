@@ -33,13 +33,10 @@ mod probe {
         };
 
         use axum::extract::Query;
-        use chrono::Duration;
         use prometheus::{
             register_gauge_with_registry,
             register_int_gauge_with_registry,
-            Counter,
             Encoder,
-            Opts,
             Registry,
             TextEncoder,
         };
@@ -147,6 +144,7 @@ mod probe {
                 )
                 .unwrap();
 
+                #[cfg(target_os = "linux")]
                 let output = Command::new("ping")
                     .arg("-q")
                     .arg("-c")
@@ -186,6 +184,7 @@ mod probe {
         impl std::str::FromStr for Ping {
             type Err = String;
 
+            #[cfg(target_os = "linux")]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 let mut out = Self::default();
 
