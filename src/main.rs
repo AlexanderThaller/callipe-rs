@@ -94,13 +94,20 @@ mod probe {
 
         #[derive(Debug, Deserialize)]
         pub(crate) struct Params {
-            target: IpAddr,
+            target: Target,
             count: Option<NonZeroU32>,
+        }
+
+        #[derive(Debug, Deserialize)]
+        #[serde(untagged)]
+        enum Target {
+            Addr(IpAddr),
+            Hostname(String),
         }
 
         #[derive(Debug)]
         struct Pinger {
-            target: IpAddr,
+            target: Target,
             count: NonZeroU32,
         }
 
@@ -206,7 +213,7 @@ mod probe {
 
                 transmitted.set(ping.transmitted.into());
                 received.set(ping.received.into());
-                packet_loss.set(ping.packet_loss.into());
+                packet_loss.set(ping.packet_loss);
                 time.set(ping.time.into());
 
                 if let Some(m) = ping.min {
@@ -240,10 +247,8 @@ mod probe {
 
                     match split.as_slice() {
                         []
-                        | ["PING", ..]
-                        | ["PING6(56=40+8+8", ..]
-                        | ["---", _, "ping", "statistics", "---"]
-                        | ["---", _, "ping6", "statistics", "---"] => {}
+                        | ["PING" | "PING6(56=40+8+8", ..]
+                        | ["---", _, "ping" | "ping6", "statistics", "---"] => {}
 
                         [transmitted, "packets", "transmitted,", received, "packets", "received,", packet_loss, "packet", "loss"] =>
                         {
@@ -261,8 +266,8 @@ mod probe {
                         }
 
                         ["rtt", "min/avg/max/mdev", "=", data, "ms"]
-                        | ["round-trip", "min/avg/max/stddev", "=", data, "ms"]
-                        | ["round-trip", "min/avg/max/std-dev", "=", data, "ms"] => {
+                        | ["round-trip", "min/avg/max/stddev" | "min/avg/max/std-dev", "=", data, "ms"] =>
+                        {
                             let mut split = data.split('/');
 
                             out.min = split.next().map(str::parse).transpose().unwrap();
@@ -276,6 +281,15 @@ mod probe {
                 }
 
                 Ok(out)
+            }
+        }
+
+        impl std::fmt::Display for Target {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    Self::Addr(v) => write!(f, "{v}"),
+                    Self::Hostname(v) => write!(f, "{v}"),
+                }
             }
         }
 
