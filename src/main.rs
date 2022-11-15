@@ -54,10 +54,10 @@ impl Accept for CombinedIncoming {
 async fn main() {
     let app = Router::new().route("/probe/ping", get(probe::ping::handler));
 
-    let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 3000);
+    let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 6122);
     let incoming_v4 = AddrIncoming::bind(&localhost_v4).unwrap();
 
-    let localhost_v6 = SocketAddr::new(Ipv6Addr::LOCALHOST.into(), 3000);
+    let localhost_v6 = SocketAddr::new(Ipv6Addr::LOCALHOST.into(), 6122);
     let incoming_v6 = AddrIncoming::bind(&localhost_v6).unwrap();
 
     let combined = CombinedIncoming {
