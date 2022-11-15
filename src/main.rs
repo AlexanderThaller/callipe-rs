@@ -56,6 +56,8 @@ impl Accept for CombinedIncoming {
 async fn main() {
     let app = Router::new()
         .route("/probe/ping", get(probe::ping::handler))
+        .route("/probe/system", get(probe::system::handler))
+        .route("/probe/system/cpu", get(probe::system::cpu::handler))
         .route("/probe/system/load", get(probe::system::load::handler));
 
     let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 6122);

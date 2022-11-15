@@ -16,11 +16,12 @@ use systemstat::{
 pub(crate) struct Params {}
 
 #[derive(Debug)]
-struct Load {}
+pub(super) struct Load {}
 
 #[allow(clippy::unused_async)]
 pub(crate) async fn handler(Query(_params): Query<Params>) -> Vec<u8> {
-    let registry = Load::run().unwrap();
+    let registry = Registry::new();
+    Load::run(&registry).unwrap();
 
     let mut buffer = vec![];
     let encoder = TextEncoder::new();
@@ -31,9 +32,7 @@ pub(crate) async fn handler(Query(_params): Query<Params>) -> Vec<u8> {
 }
 
 impl Load {
-    fn run() -> Result<Registry, Error> {
-        let registry = Registry::new();
-
+    pub(super) fn run(registry: &Registry) -> Result<(), Error> {
         let sys = System::new();
         let load = sys.load_average()?;
 
@@ -58,6 +57,6 @@ impl Load {
         )?
         .set(load.fifteen.into());
 
-        Ok(registry)
+        Ok(())
     }
 }
