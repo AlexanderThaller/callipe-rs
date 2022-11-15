@@ -108,7 +108,7 @@ mod probe {
         struct Ping {
             transmitted: u32,
             received: u32,
-            packet_loss: u8,
+            packet_loss: f64,
             time: u32,
             min: Option<f64>,
             avg: Option<f64>,
@@ -151,7 +151,7 @@ mod probe {
                 )
                 .unwrap();
 
-                let packet_loss = register_int_gauge_with_registry!(
+                let packet_loss = register_gauge_with_registry!(
                     "probe_ping_packetloss_precent",
                     "percentage of lost pings",
                     registry
@@ -299,7 +299,7 @@ rtt min/avg/max/mdev = 7.537/7.537/7.537/0.000 ms"#;
                         let expected = Ping {
                             transmitted: 1,
                             received: 1,
-                            packet_loss: 0,
+                            packet_loss: 0.0,
                             time: 0,
                             min: Some(7.537),
                             avg: Some(7.537),
@@ -327,7 +327,7 @@ rtt min/avg/max/mdev = 7.427/7.654/7.936/0.169 ms"#;
                         let expected = Ping {
                             transmitted: 10,
                             received: 10,
-                            packet_loss: 0,
+                            packet_loss: 0.0,
                             time: 9011,
                             min: Some(7.427),
                             avg: Some(7.654),
@@ -356,7 +356,7 @@ PING 51.61.61.1 (51.61.61.1) 56(84) bytes of data.
                         let expected = Ping {
                             transmitted: 10,
                             received: 0,
-                            packet_loss: 100,
+                            packet_loss: 100.0,
                             time: 9244,
                             min: None,
                             avg: None,
