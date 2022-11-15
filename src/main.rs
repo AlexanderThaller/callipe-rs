@@ -113,10 +113,10 @@ mod probe {
 
         #[derive(Debug, Default, PartialEq)]
         struct Ping {
-            transmitted: u32,
-            received: u32,
-            packet_loss: f64,
-            time: u32,
+            transmitted: Option<u32>,
+            received: Option<u32>,
+            packet_loss: Option<f64>,
+            time: Option<u32>,
             min: Option<f64>,
             avg: Option<f64>,
             max: Option<f64>,
@@ -144,62 +144,6 @@ mod probe {
             async fn run(self) -> Result<Registry, String> {
                 let registry = Registry::new();
 
-                let transmitted = register_int_gauge_with_registry!(
-                    "probe_ping_transmitted_count",
-                    "how many pings where sent",
-                    registry
-                )
-                .unwrap();
-
-                let received = register_int_gauge_with_registry!(
-                    "probe_ping_received_count",
-                    "how many pings where received",
-                    registry
-                )
-                .unwrap();
-
-                let packet_loss = register_gauge_with_registry!(
-                    "probe_ping_packetloss_precent",
-                    "percentage of lost pings",
-                    registry
-                )
-                .unwrap();
-
-                let time = register_int_gauge_with_registry!(
-                    "probe_ping_time_milliseconds",
-                    "how long pinging took in total",
-                    registry
-                )
-                .unwrap();
-
-                let min = register_gauge_with_registry!(
-                    "probe_ping_min_milliseconds",
-                    "minimum duration of pings",
-                    registry
-                )
-                .unwrap();
-
-                let max = register_gauge_with_registry!(
-                    "probe_ping_max_milliseconds",
-                    "maximum duration of pings",
-                    registry
-                )
-                .unwrap();
-
-                let avg = register_gauge_with_registry!(
-                    "probe_ping_avg_milliseconds",
-                    "average duration of pings",
-                    registry
-                )
-                .unwrap();
-
-                let mdev = register_gauge_with_registry!(
-                    "probe_ping_mdev_milliseconds",
-                    "standard deviation of pings",
-                    registry
-                )
-                .unwrap();
-
                 let output = Command::new("ping")
                     .arg("-q")
                     .arg("-c")
@@ -209,27 +153,94 @@ mod probe {
                     .await
                     .unwrap();
 
+                register_int_gauge_with_registry!(
+                    "probe_ping_failed_status",
+                    "if the probe failed",
+                    registry
+                )
+                .unwrap()
+                .set(output.status.code().unwrap_or_default().into());
+
                 let ping = Ping::from_str(&String::from_utf8_lossy(&output.stdout)).unwrap();
 
-                transmitted.set(ping.transmitted.into());
-                received.set(ping.received.into());
-                packet_loss.set(ping.packet_loss);
-                time.set(ping.time.into());
-
-                if let Some(m) = ping.min {
-                    min.set(m);
+                if let Some(transmitted) = ping.transmitted {
+                    register_int_gauge_with_registry!(
+                        "probe_ping_transmitted_count",
+                        "how many pings where sent",
+                        registry
+                    )
+                    .unwrap()
+                    .set(transmitted.into());
                 }
 
-                if let Some(a) = ping.avg {
-                    avg.set(a);
+                if let Some(received) = ping.received {
+                    register_int_gauge_with_registry!(
+                        "probe_ping_received_count",
+                        "how many pings where received",
+                        registry
+                    )
+                    .unwrap()
+                    .set(received.into());
                 }
 
-                if let Some(m) = ping.max {
-                    max.set(m);
+                if let Some(packet_loss) = ping.packet_loss {
+                    register_gauge_with_registry!(
+                        "probe_ping_packetloss_precent",
+                        "percentage of lost pings",
+                        registry
+                    )
+                    .unwrap()
+                    .set(packet_loss);
                 }
 
-                if let Some(m) = ping.mdev {
-                    mdev.set(m);
+                if let Some(time) = ping.time {
+                    register_int_gauge_with_registry!(
+                        "probe_ping_time_milliseconds",
+                        "how long pinging took in total",
+                        registry
+                    )
+                    .unwrap()
+                    .set(time.into());
+                }
+
+                if let Some(min) = ping.min {
+                    register_gauge_with_registry!(
+                        "probe_ping_min_milliseconds",
+                        "minimum duration of pings",
+                        registry
+                    )
+                    .unwrap()
+                    .set(min);
+                }
+
+                if let Some(avg) = ping.avg {
+                    register_gauge_with_registry!(
+                        "probe_ping_avg_milliseconds",
+                        "average duration of pings",
+                        registry
+                    )
+                    .unwrap()
+                    .set(avg);
+                }
+
+                if let Some(max) = ping.max {
+                    register_gauge_with_registry!(
+                        "probe_ping_max_milliseconds",
+                        "maximum duration of pings",
+                        registry
+                    )
+                    .unwrap()
+                    .set(max);
+                }
+
+                if let Some(mdev) = ping.mdev {
+                    register_gauge_with_registry!(
+                        "probe_ping_mdev_milliseconds",
+                        "standard deviation of pings",
+                        registry
+                    )
+                    .unwrap()
+                    .set(mdev);
                 }
 
                 Ok(registry)
@@ -252,17 +263,19 @@ mod probe {
 
                         [transmitted, "packets", "transmitted,", received, "packets", "received,", packet_loss, "packet", "loss"] =>
                         {
-                            out.transmitted = transmitted.parse().unwrap();
-                            out.received = received.parse().unwrap();
-                            out.packet_loss = packet_loss.trim_end_matches('%').parse().unwrap();
+                            out.transmitted = Some(transmitted.parse().unwrap());
+                            out.received = Some(received.parse().unwrap());
+                            out.packet_loss =
+                                Some(packet_loss.trim_end_matches('%').parse().unwrap());
                         }
 
                         [transmitted, "packets", "transmitted,", received, "received,", packet_loss, "packet", "loss,", "time", time] =>
                         {
-                            out.transmitted = transmitted.parse().unwrap();
-                            out.received = received.parse().unwrap();
-                            out.packet_loss = packet_loss.trim_end_matches('%').parse().unwrap();
-                            out.time = time.trim_end_matches("ms").parse().unwrap();
+                            out.transmitted = Some(transmitted.parse().unwrap());
+                            out.received = Some(received.parse().unwrap());
+                            out.packet_loss =
+                                Some(packet_loss.trim_end_matches('%').parse().unwrap());
+                            out.time = Some(time.trim_end_matches("ms").parse().unwrap());
                         }
 
                         ["rtt", "min/avg/max/mdev", "=", data, "ms"]
@@ -313,10 +326,10 @@ PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
 rtt min/avg/max/mdev = 7.537/7.537/7.537/0.000 ms"#;
 
                         let expected = Ping {
-                            transmitted: 1,
-                            received: 1,
-                            packet_loss: 0.0,
-                            time: 0,
+                            transmitted: Some(1),
+                            received: Some(1),
+                            packet_loss: Some(0.0),
+                            time: Some(0),
                             min: Some(7.537),
                             avg: Some(7.537),
                             max: Some(7.537),
@@ -341,10 +354,10 @@ PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
 rtt min/avg/max/mdev = 7.427/7.654/7.936/0.169 ms"#;
 
                         let expected = Ping {
-                            transmitted: 10,
-                            received: 10,
-                            packet_loss: 0.0,
-                            time: 9011,
+                            transmitted: Some(10),
+                            received: Some(10),
+                            packet_loss: Some(0.0),
+                            time: Some(9011),
                             min: Some(7.427),
                             avg: Some(7.654),
                             max: Some(7.936),
@@ -370,10 +383,10 @@ PING 51.61.61.1 (51.61.61.1) 56(84) bytes of data.
 "#;
 
                         let expected = Ping {
-                            transmitted: 10,
-                            received: 0,
-                            packet_loss: 100.0,
-                            time: 9244,
+                            transmitted: Some(10),
+                            received: Some(0),
+                            packet_loss: Some(100.0),
+                            time: Some(9244),
                             min: None,
                             avg: None,
                             max: None,
