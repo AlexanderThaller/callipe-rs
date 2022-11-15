@@ -241,8 +241,15 @@ mod probe {
                     match split.as_slice() {
                         []
                         | ["PING", ..]
-                        | ["---", _, "ping6", "statistics", "---"]
-                        | ["---", _, "ping", "statistics", "---"] => {}
+                        | ["---", _, "ping", "statistics", "---"]
+                        | ["---", _, "ping6", "statistics", "---"] => {}
+
+                        [transmitted, "packets", "transmitted,", received, "packets", "received,", packet_loss, "packet", "loss"] =>
+                        {
+                            out.transmitted = transmitted.parse().unwrap();
+                            out.received = received.parse().unwrap();
+                            out.packet_loss = packet_loss.trim_end_matches('%').parse().unwrap();
+                        }
 
                         [transmitted, "packets", "transmitted,", received, "received,", packet_loss, "packet", "loss,", "time", time] =>
                         {
