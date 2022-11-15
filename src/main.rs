@@ -241,6 +241,7 @@ mod probe {
                     match split.as_slice() {
                         []
                         | ["PING", ..]
+                        | ["PING6(56=40+8+8", ..]
                         | ["---", _, "ping", "statistics", "---"]
                         | ["---", _, "ping6", "statistics", "---"] => {}
 
