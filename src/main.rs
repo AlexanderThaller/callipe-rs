@@ -193,7 +193,6 @@ mod probe {
                 )
                 .unwrap();
 
-                #[cfg(target_os = "linux")]
                 let output = Command::new("ping")
                     .arg("-q")
                     .arg("-c")
@@ -233,7 +232,6 @@ mod probe {
         impl std::str::FromStr for Ping {
             type Err = String;
 
-            #[cfg(target_os = "linux")]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 let mut out = Self::default();
 
@@ -241,7 +239,10 @@ mod probe {
                     let split = line.split_ascii_whitespace().collect::<Vec<_>>();
 
                     match split.as_slice() {
-                        [] | ["PING", ..] | ["---", _, "ping", "statistics", "---"] => {}
+                        []
+                        | ["PING", ..]
+                        | ["---", _, "ping6", "statistics", "---"]
+                        | ["---", _, "ping", "statistics", "---"] => {}
 
                         [transmitted, "packets", "transmitted,", received, "received,", packet_loss, "packet", "loss,", "time", time] =>
                         {
@@ -251,7 +252,8 @@ mod probe {
                             out.time = time.trim_end_matches("ms").parse().unwrap();
                         }
 
-                        ["rtt", "min/avg/max/mdev", "=", data, "ms"] => {
+                        ["rtt", "min/avg/max/mdev", "=", data, "ms"]
+                        | ["round-trip", "min/avg/max/std-dev", "=", data, "ms"] => {
                             let mut split = data.split('/');
 
                             out.min = split.next().map(str::parse).transpose().unwrap();
