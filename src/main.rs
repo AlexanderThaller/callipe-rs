@@ -77,6 +77,7 @@ mod probe {
     pub(crate) mod ping {
         use std::{
             net::IpAddr,
+            num::NonZeroU32,
             str::FromStr,
         };
 
@@ -94,13 +95,13 @@ mod probe {
         #[derive(Debug, Deserialize)]
         pub(crate) struct Params {
             target: IpAddr,
-            count: Option<u32>,
+            count: Option<NonZeroU32>,
         }
 
         #[derive(Debug)]
         struct Pinger {
             target: IpAddr,
-            count: u32,
+            count: NonZeroU32,
         }
 
         #[derive(Debug, Default, PartialEq)]
@@ -118,7 +119,7 @@ mod probe {
         pub(crate) async fn handler(Query(params): Query<Params>) -> Vec<u8> {
             let registry = Pinger {
                 target: params.target,
-                count: params.count.unwrap_or(1),
+                count: params.count.unwrap_or(NonZeroU32::new(1).unwrap()),
             }
             .run()
             .await
