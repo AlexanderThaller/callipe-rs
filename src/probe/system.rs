@@ -18,7 +18,7 @@ pub(crate) struct Params {}
 pub(crate) async fn handler(Query(_params): Query<Params>) -> Vec<u8> {
     let registry = Registry::new();
     load::Load::run(&registry).unwrap();
-    cpu::Cpu::run(&registry).await.unwrap();
+    cpu::Cpu::run(&registry).unwrap();
     memory::Memory::run(&registry).unwrap();
     // TODO: Not working on freebsd
     // swap::Swap::run(&registry).unwrap();

@@ -2,7 +2,7 @@
 name = "callipe-rs"
 version = "0.1.0"
 authors = ["Alexander Thaller <alexander.thaller@trivago.com>"]
-edition = "2018"
+edition = "2021"
 
 description = "Metrics collector in the vein of telegraf written in rust."
 documentation = "https://docs.rs/callipe-rs/"
@@ -22,7 +22,7 @@ num_cpus = "1"
 prometheus = "0.13"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-systemstat = "0.2"
+systemstat = { git = "https://github.com/AlexanderThaller/systemstat/", branch = "add-cpu-time-to-platform-trait" }
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
