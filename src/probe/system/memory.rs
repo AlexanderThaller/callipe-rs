@@ -37,8 +37,6 @@ impl Memory {
 
         let memory = sys.memory()?;
 
-        dbg!(&memory);
-
         #[allow(clippy::cast_possible_wrap)]
         register_int_gauge_with_registry!(
             "system_memory_total_byte",

@@ -36,8 +36,6 @@ impl Swap {
         let sys = System::new();
         let swap = sys.swap()?;
 
-        dbg!(&swap);
-
         #[allow(clippy::cast_possible_wrap)]
         register_int_gauge_with_registry!(
             "system_swap_total_byte",
