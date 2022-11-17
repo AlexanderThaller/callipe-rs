@@ -38,9 +38,6 @@ impl Memory {
         let sys = System::new();
 
         let memory = sys.memory()?;
-        // let info = memory.platform_memory.meminfo;
-
-        dbg!(&memory);
 
         register_int_gauge_with_registry!(
             "system_memory_total_byte",
@@ -56,18 +53,67 @@ impl Memory {
         )?
         .set(memory.free.0 as i64);
 
-        // let platform = register_int_gauge_vec_with_registry!(
-        //    "system_memory_platform_byte",
-        //    "platform specific memory information",
-        //    &["name"],
-        //    registry
-        //)?;
+        Memory::platform_memory(registry, memory)?;
 
-        // for (name, value) in info {
-        //    platform
-        //        .with_label_values(&[&name])
-        //        .set(value.as_u64() as i64);
-        //}
+        Ok(())
+    }
+
+    #[cfg(target_os = "linux")]
+    #[allow(clippy::cast_possible_wrap)]
+    fn platform_memory(registry: &Registry, memory: systemstat::Memory) -> Result<(), Error> {
+        let info = memory.platform_memory.meminfo;
+
+        let platform = register_int_gauge_vec_with_registry!(
+            "system_memory_platform_byte",
+            "platform specific memory information",
+            &["name"],
+            registry
+        )?;
+
+        for (name, value) in info {
+            platform
+                .with_label_values(&[&name.to_ascii_lowercase()])
+                .set(value.as_u64() as i64);
+        }
+
+        Ok(())
+    }
+
+    #[cfg(target_os = "freebsd")]
+    #[allow(clippy::cast_possible_wrap)]
+    fn platform_memory(registry: &Registry, memory: systemstat::Memory) -> Result<(), Error> {
+        let info = memory.platform_memory;
+
+        let platform = register_int_gauge_vec_with_registry!(
+            "system_memory_platform_byte",
+            "platform specific memory information",
+            &["name"],
+            registry
+        )?;
+
+        platform
+            .with_label_values(&["active"])
+            .set(info.active.as_u64() as i64);
+
+        platform
+            .with_label_values(&["inactive"])
+            .set(info.inactive.as_u64() as i64);
+
+        platform
+            .with_label_values(&["wired"])
+            .set(info.wired.as_u64() as i64);
+
+        platform
+            .with_label_values(&["cache"])
+            .set(info.cache.as_u64() as i64);
+
+        platform
+            .with_label_values(&["zfs_arc"])
+            .set(info.zfs_arc.as_u64() as i64);
+
+        platform
+            .with_label_values(&["free"])
+            .set(info.free.as_u64() as i64);
 
         Ok(())
     }
