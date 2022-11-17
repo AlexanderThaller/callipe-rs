@@ -66,13 +66,13 @@ impl Memory {
         let platform = register_int_gauge_vec_with_registry!(
             "system_memory_platform_byte",
             "platform specific memory information",
-            &["name"],
+            &["os", "name"],
             registry
         )?;
 
         for (name, value) in info {
             platform
-                .with_label_values(&[&name.to_ascii_lowercase()])
+                .with_label_values(&["linux", &name.to_ascii_lowercase()])
                 .set(value.as_u64() as i64);
         }
 
@@ -87,32 +87,32 @@ impl Memory {
         let platform = register_int_gauge_vec_with_registry!(
             "system_memory_platform_byte",
             "platform specific memory information",
-            &["name"],
+            &["os", "name"],
             registry
         )?;
 
         platform
-            .with_label_values(&["active"])
+            .with_label_values(&["freebsd", "active"])
             .set(info.active.as_u64() as i64);
 
         platform
-            .with_label_values(&["inactive"])
+            .with_label_values(&["freebsd", "inactive"])
             .set(info.inactive.as_u64() as i64);
 
         platform
-            .with_label_values(&["wired"])
+            .with_label_values(&["freebsd", "wired"])
             .set(info.wired.as_u64() as i64);
 
         platform
-            .with_label_values(&["cache"])
+            .with_label_values(&["freebsd", "cache"])
             .set(info.cache.as_u64() as i64);
 
         platform
-            .with_label_values(&["zfs_arc"])
+            .with_label_values(&["freebsd", "zfs_arc"])
             .set(info.zfs_arc.as_u64() as i64);
 
         platform
-            .with_label_values(&["free"])
+            .with_label_values(&["freebsd", "free"])
             .set(info.free.as_u64() as i64);
 
         Ok(())
