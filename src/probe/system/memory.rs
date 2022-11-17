@@ -38,7 +38,9 @@ impl Memory {
         let sys = System::new();
 
         let memory = sys.memory()?;
-        let info = memory.platform_memory.meminfo;
+        // let info = memory.platform_memory.meminfo;
+
+        dbg!(&memory);
 
         register_int_gauge_with_registry!(
             "system_memory_total_byte",
@@ -54,18 +56,18 @@ impl Memory {
         )?
         .set(memory.free.0 as i64);
 
-        let platform = register_int_gauge_vec_with_registry!(
-            "system_memory_platform_byte",
-            "platform specific memory information",
-            &["name"],
-            registry
-        )?;
+        // let platform = register_int_gauge_vec_with_registry!(
+        //    "system_memory_platform_byte",
+        //    "platform specific memory information",
+        //    &["name"],
+        //    registry
+        //)?;
 
-        for (name, value) in info {
-            platform
-                .with_label_values(&[&name])
-                .set(value.as_u64() as i64);
-        }
+        // for (name, value) in info {
+        //    platform
+        //        .with_label_values(&[&name])
+        //        .set(value.as_u64() as i64);
+        //}
 
         Ok(())
     }
