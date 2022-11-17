@@ -37,8 +37,6 @@ impl Cpu {
         let sys = System::new();
         let cpu = sys.cpu_time_aggregate()?;
 
-        dbg!(&cpu);
-
         register_int_counter_with_registry!("system_cpu_user", "system cpu user usage", registry)?
             .inc_by(cpu.user.try_into().unwrap());
 

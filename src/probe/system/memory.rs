@@ -1,6 +1,7 @@
 use anyhow::Error;
 use axum::extract::Query;
 use prometheus::{
+    register_int_gauge_vec_with_registry,
     register_int_gauge_with_registry,
     Encoder,
     Registry,
@@ -32,12 +33,13 @@ pub(crate) async fn handler(Query(_params): Query<Params>) -> Vec<u8> {
 }
 
 impl Memory {
+    #[allow(clippy::cast_possible_wrap)]
     pub(super) fn run(registry: &Registry) -> Result<(), Error> {
         let sys = System::new();
 
         let memory = sys.memory()?;
+        let info = memory.platform_memory.meminfo;
 
-        #[allow(clippy::cast_possible_wrap)]
         register_int_gauge_with_registry!(
             "system_memory_total_byte",
             "total memory in the system",
@@ -45,13 +47,25 @@ impl Memory {
         )?
         .set(memory.total.0 as i64);
 
-        #[allow(clippy::cast_possible_wrap)]
         register_int_gauge_with_registry!(
             "system_memory_free_byte",
             "free memory in the system",
             registry
         )?
         .set(memory.free.0 as i64);
+
+        let platform = register_int_gauge_vec_with_registry!(
+            "system_memory_platform_byte",
+            "platform specific memory information",
+            &["name"],
+            registry
+        )?;
+
+        for (name, value) in info {
+            platform
+                .with_label_values(&[&name])
+                .set(value.as_u64() as i64);
+        }
 
         Ok(())
     }
