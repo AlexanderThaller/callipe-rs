@@ -103,6 +103,16 @@ impl Pinger {
             .set(received.into());
         }
 
+        if let Some(errors) = ping.errors {
+            register_int_gauge_with_registry!(
+                "ping_errors_count",
+                "how many pings where errors",
+                registry
+            )
+            .unwrap()
+            .set(errors.into());
+        }
+
         if let Some(packet_loss) = ping.packet_loss {
             register_gauge_with_registry!(
                 "ping_packetloss_precent",
