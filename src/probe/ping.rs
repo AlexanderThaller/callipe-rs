@@ -38,6 +38,7 @@ struct Pinger {
 struct Ping {
     transmitted: Option<u32>,
     received: Option<u32>,
+    errors: Option<u32>,
     packet_loss: Option<f64>,
     time: Option<u32>,
     min: Option<f64>,
@@ -195,6 +196,15 @@ impl std::str::FromStr for Ping {
                     out.time = Some(time.trim_end_matches("ms").parse().unwrap());
                 }
 
+                [transmitted, "packets", "transmitted,", received, "received,", errors, "errors,", packet_loss, "packet", "loss,", "time", time] =>
+                {
+                    out.transmitted = Some(transmitted.parse().unwrap());
+                    out.received = Some(received.parse().unwrap());
+                    out.errors = Some(errors.trim_start_matches('+').parse().unwrap());
+                    out.packet_loss = Some(packet_loss.trim_end_matches('%').parse().unwrap());
+                    out.time = Some(time.trim_end_matches("ms").parse().unwrap());
+                }
+
                 ["rtt", "min/avg/max/mdev", "=", data, "ms"]
                 | ["round-trip", "min/avg/max/stddev" | "min/avg/max/std-dev", "=", data, "ms"] => {
                     let mut split = data.split('/');
@@ -243,6 +253,7 @@ rtt min/avg/max/mdev = 7.537/7.537/7.537/0.000 ms"#;
             let expected = Ping {
                 transmitted: Some(1),
                 received: Some(1),
+                errors: None,
                 packet_loss: Some(0.0),
                 time: Some(0),
                 min: Some(7.537),
@@ -271,6 +282,7 @@ rtt min/avg/max/mdev = 7.427/7.654/7.936/0.169 ms"#;
             let expected = Ping {
                 transmitted: Some(10),
                 received: Some(10),
+                errors: None,
                 packet_loss: Some(0.0),
                 time: Some(9011),
                 min: Some(7.427),
@@ -300,6 +312,7 @@ PING 51.61.61.1 (51.61.61.1) 56(84) bytes of data.
             let expected = Ping {
                 transmitted: Some(10),
                 received: Some(0),
+                errors: None,
                 packet_loss: Some(100.0),
                 time: Some(9244),
                 min: None,
