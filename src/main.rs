@@ -54,14 +54,19 @@ impl Accept for CombinedIncoming {
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-        .route("/probe/info", get(probe::info::handler))
-        .route("/probe/ping", get(probe::ping::handler))
-        .route("/probe/system", get(probe::system::handler))
-        .route("/probe/system/cpu", get(probe::system::cpu::handler))
-        .route("/probe/system/load", get(probe::system::load::handler))
-        .route("/probe/system/memory", get(probe::system::memory::handler))
-        .route("/probe/system/swap", get(probe::system::swap::handler));
+    let system_routes = Router::new()
+        .route("/", get(probe::system::handler))
+        .route("/cpu", get(probe::system::cpu::handler))
+        .route("/load", get(probe::system::load::handler))
+        .route("/memory", get(probe::system::memory::handler))
+        .route("/swap", get(probe::system::swap::handler));
+
+    let probe_routes = Router::new()
+        .route("/info", get(probe::info::handler))
+        .route("/ping", get(probe::ping::handler))
+        .nest("/system", system_routes);
+
+    let app = Router::new().nest("/probe", probe_routes);
 
     let localhost_v4 = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 6122);
     let incoming_v4 = AddrIncoming::bind(&localhost_v4).unwrap();
