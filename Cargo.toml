@@ -25,6 +25,9 @@ serde_yaml = "0.9"
 systemstat = { git = "https://github.com/AlexanderThaller/systemstat/", branch = "add-cpu-time-to-platform-trait" }
 tokio = { version = "1", features = ["full"] }
 
+[build-dependencies]
+vergen = { version = "7", default-features = false, features = ["build", "cargo", "git"] }
+
 [dev-dependencies]
 pretty_assertions = "1"
 
